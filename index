@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Матмодели в кластеризации данных</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ml5@latest/dist/ml5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .algorithm-description {
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button.active {
+            background-color: #2c3e50;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .visualization-section {
+            grid-column: 1 / -1;
+        }
+        
+        .math-model {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .algorithm-list {
+            list-style-type: none;
+            margin-top: 15px;
+        }
+        
+        .algorithm-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .algorithm-list li:last-child {
+            border-bottom: none;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .data-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .data-controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Математические модели в кластеризации данных</h1>
+        <p class="subtitle">Кластеризация — задача разбиения множества объектов на группы (кластеры) так, чтобы объекты внутри одного кластера были более похожи друг на друга, чем на объекты из других кластеров</p>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2 class="card-title">Что такое кластеризация?</h2>
+            <p class="algorithm-description">
+                Кластеризация (группировка) — один из методов обучения без учителя, используемый для обнаружения скрытых закономерностей и структуры в данных. 
+                В отличие от классификации, при кластеризации заранее неизвестно, к каким группам принадлежат объекты.
+            </p>
+            <p class="algorithm-description">
+                Математические модели кластеризации находят применение в различных областях:
+            </p>
+            <ul class="algorithm-list">
+                <li>Сегментация клиентов в маркетинге</li>
+                <li>Анализ геномных данных в биоинформатике</li>
+                <li>Сжатие изображений</li>
+                <li>Обнаружение аномалий в системах безопасности</li>
+                <li>Социальный анализ и выявление сообществ</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">Основные алгоритмы</h2>
+            <div class="controls">
+                <button id="kmeans-btn" class="active">K-средних</button>
+                <button id="dbscan-btn">DBSCAN</button>
+                <button id="hierarchical-btn">Иерархическая</button>
+                <button id="gmm-btn">GMM (Гауссовы смеси)</button>
+            </div>
+            
+            <div id="algorithm-description">
+                <p><strong>K-средних (K-means)</strong> — один из самых популярных алгоритмов кластеризации. Цель алгоритма — разделить данные на K кластеров, минимизируя суммарное квадратичное отклонение точек кластеров от центроидов этих кластеров.</p>
+                <div class="math-model">
+                    Минимизируется целевая функция: J = ΣΣ ||xᵢ - μⱼ||²<br>
+                    где μⱼ — центроид кластера j, xᵢ — точка данных, принадлежащая кластеру j.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card visualization-section">
+            <h2 class="card-title">Интерактивная визуализация</h2>
+            
+            <div class="data-controls">
+                <label>
+                    Количество кластеров: <span id="cluster-count">4</span>
+                    <input type="range" id="cluster-slider" min="2" max="8" value="4">
+                </label>
+                
+                <label>
+                    Количество точек: <span id="point-count">200</span>
+                    <input type="range" id="point-slider" min="50" max="500" value="200">
+                </label>
+                
+                <button id="generate-data-btn">Сгенерировать данные</button>
+                <button id="run-clustering-btn">Запустить кластеризацию</button>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="clustering-chart"></canvas>
+            </div>
+            
+            <div class="legend" id="chart-legend"></div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">Метрики качества кластеризации</h2>
+            <p class="algorithm-description">
+                Для оценки качества кластеризации используются различные метрики:
+            </p>
+            <ul class="algorithm-list">
+                <li><strong>Индекс Данна</strong> — отношение минимального межкластерного расстояния к максимальному внутрикластерному расстоянию</li>
+                <li><strong>Силуэт</strong> — измеряет, насколько объект похож на свой собственный кластер по сравнению с другими кластерами</li>
+                <li><strong>Calinski-Harabasz Index</strong> — отношение дисперсии между кластерами к дисперсии внутри кластеров</li>
+                <li><strong>Davies-Bouldin Index</strong> — среднее сходство между каждым кластером и его наиболее похожим кластером</li>
+            </ul>
+            <div id="metrics-display">
+                <p>После выполнения кластеризации здесь будут отображены метрики качества.</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">Выбор числа кластеров</h2>
+            <p class="algorithm-description">
+                Одна из ключевых проблем в кластеризации — определение оптимального числа кластеров. Для этого используются методы:
+            </p>
+            <ul class="algorithm-list">
+                <li><strong>Метод локтя (Elbow Method)</strong> — анализ зависимости суммы квадратов расстояний от числа кластеров</li>
+                <li><strong>Анализ силуэта (Silhouette Analysis)</strong> — выбор числа кластеров, максимизирующего среднее значение силуэта</li>
+                <li><strong>Gap Statistic</strong> — сравнение суммарного внутрикластерного разброса с его ожидаемым значением при нулевом распределении</li>
+            </ul>
+            <p class="algorithm-description">
+                На практике часто используют несколько методов совместно для получения более надежного результата.
+            </p>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Демонстрация математических моделей в кластеризации данных | Создано для иллюстрации основных принципов кластеризации</p>
+        <p>Используемые технологии: HTML5, CSS3, JavaScript, Chart.js</p>
+    </footer>
+
+    <script>
+        // Элементы DOM
+        const algorithmButtons = document.querySelectorAll('.controls button');
+        const algorithmDescription = document.getElementById('algorithm-description');
+        const clusterSlider = document.getElementById('cluster-slider');
+        const clusterCount = document.getElementById('cluster-count');
+        const pointSlider = document.getElementById('point-slider');
+        const pointCount = document.getElementById('point-count');
+        const generateDataBtn = document.getElementById('generate-data-btn');
+        const runClusteringBtn = document.getElementById('run-clustering-btn');
+        const metricsDisplay = document.getElementById('metrics-display');
+        const chartLegend = document.getElementById('chart-legend');
+        
+        // Данные и состояние
+        let currentAlgorithm = 'kmeans';
+        let dataPoints = [];
+        let clusters = [];
+        let chart;
+        
+        // Цвета для кластеров
+        const clusterColors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+            '#9966FF', '#FF9F40', '#8AC926', '#1982C4'
+        ];
+        
+        // Описания алгоритмов
+        const algorithmDescriptions = {
+            kmeans: {
+                name: "K-средних (K-means)",
+                description: "<p><strong>K-средних (K-means)</strong> — один из самых популярных алгоритмов кластеризации. Цель алгоритма — разделить данные на K кластеров, минимизируя суммарное квадратичное отклонение точек кластеров от центроидов этих кластеров.</p>",
+                mathModel: "Минимизируется целевая функция: J = ΣΣ ||xᵢ - μⱼ||²<br>где μⱼ — центроид кластера j, xᵢ — точка данных, принадлежащая кластеру j."
+            },
+            dbscan: {
+                name: "DBSCAN",
+                description: "<p><strong>DBSCAN (Density-Based Spatial Clustering of Applications with Noise)</strong> — алгоритм кластеризации на основе плотности. Обнаруживает кластеры произвольной формы и помечает выбросы как шум.</p>",
+                mathModel: "Основные параметры: ε (радиус окрестности) и minPts (минимальное количество точек).<br>Точка является основной, если в её ε-окрестности есть хотя бы minPts точек."
+            },
+            hierarchical: {
+                name: "Иерархическая кластеризация",
+                description: "<p><strong>Иерархическая кластеризация</strong> — создает древовидную структуру кластеров (дендрограмму). Может быть агломеративной (снизу вверх) или дивизивной (сверху вниз).</p>",
+                mathModel: "Использует меру близости между кластерами: одинарная, полная или средняя связь.<br>Агломеративный алгоритм начинается с N кластеров и последовательно объединяет самые близкие."
+            },
+            gmm: {
+                name: "GMM (Гауссовы смеси)",
+                description: "<p><strong>GMM (Gaussian Mixture Models)</strong> — вероятностная модель, предполагающая, что все точки данных порождены смесью конечного числа гауссовых распределений с неизвестными параметрами.</p>",
+                mathModel: "Вероятность наблюдения точки x: p(x) = Σ πᵢ N(x|μᵢ, Σᵢ)<br>где πᵢ — вес компоненты, μᵢ — среднее, Σᵢ — ковариационная матрица."
+            }
+        };
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            generateData();
+            setupEventListeners();
+        });
+        
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            // Кнопки выбора алгоритма
+            algorithmButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    algorithmButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentAlgorithm = this.id.replace('-btn', '');
+                    updateAlgorithmDescription();
+                });
+            });
+            
+            // Слайдеры
+            clusterSlider.addEventListener('input', function() {
+                clusterCount.textContent = this.value;
+            });
+            
+            pointSlider.addEventListener('input', function() {
+                pointCount.textContent = this.value;
+            });
+            
+            // Кнопки генерации данных и кластеризации
+            generateDataBtn.addEventListener('click', generateData);
+            runClusteringBtn.addEventListener('click', performClustering);
+        }
+        
+        // Обновление описания алгоритма
+        function updateAlgorithmDescription() {
+            const algo = algorithmDescriptions[currentAlgorithm];
+            algorithmDescription.innerHTML = `
+                ${algo.description}
+                <div class="math-model">${algo.mathModel}</div>
+            `;
+        }
+        
+        // Инициализация графика
+        function initializeChart() {
+            const ctx = document.getElementById('clustering-chart').getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            min: -10,
+                            max: 10,
+                            title: {
+                                display: true,
+                                text: 'Ось X'
+                            }
+                        },
+                        y: {
+                            min: -10,
+                            max: 10,
+                            title: {
+                                display: true,
+                                text: 'Ось Y'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Точка (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Генерация тестовых данных
+        function generateData() {
+            const numClusters = parseInt(clusterSlider.value);
+            const numPoints = parseInt(pointSlider.value);
+            
+            dataPoints = [];
+            clusters = [];
+            
+            // Генерация кластеров со случайными центрами
+            for (let i = 0; i < numClusters; i++) {
+                const centerX = (Math.random() - 0.5) * 16;
+                const centerY = (Math.random() - 0.5) * 16;
+                
+                // Случайное количество точек в кластере
+                const clusterPoints = Math.floor(numPoints / numClusters * (0.7 + Math.random() * 0.6));
+                
+                clusters.push({
+                    centerX,
+                    centerY,
+                    points: []
+                });
+                
+                // Генерация точек для кластера
+                for (let j = 0; j < clusterPoints; j++) {
+                    const x = centerX + (Math.random() - 0.5) * 4;
+                    const y = centerY + (Math.random() - 0.5) * 4;
+                    
+                    dataPoints.push({
+                        x,
+                        y,
+                        cluster: i,
+                        originalCluster: i // Для сравнения с результатами кластеризации
+                    });
+                    
+                    clusters[i].points.push({
+                        x,
+                        y
+                    });
+                }
+            }
+            
+            // Перемешиваем точки для реалистичности
+            shuffleArray(dataPoints);
+            
+            // Обновляем график
+            updateChartWithData();
+            
+            // Сбрасываем метрики
+            metricsDisplay.innerHTML = "<p>Сгенерированы новые данные. Нажмите 'Запустить кластеризацию' для анализа.</p>";
+        }
+        
+        // Выполнение кластеризации
+        function performClustering() {
+            const k = parseInt(clusterSlider.value);
+            
+            // Простая реализация K-means для демонстрации
+            if (currentAlgorithm === 'kmeans') {
+                kMeansClustering(k);
+            } 
+            // Для других алгоритмов используем случайные метки (для демонстрации)
+            else {
+                randomClustering(k);
+            }
+            
+            // Обновляем график с результатами кластеризации
+            updateChartWithClusters();
+            
+            // Рассчитываем и отображаем метрики
+            calculateMetrics();
+            
+            // Обновляем легенду
+            updateLegend();
+        }
+        
+        // Простая реализация K-means
+        function kMeansClustering(k) {
+            // Инициализация центроидов случайными точками
+            let centroids = [];
+            for (let i = 0; i < k; i++) {
+                const randomPoint = dataPoints[Math.floor(Math.random() * dataPoints.length)];
+                centroids.push({
+                    x: randomPoint.x,
+                    y: randomPoint.y
+                });
+            }
+            
+            let changed = true;
+            let iterations = 0;
+            const maxIterations = 100;
+            
+            while (changed && iterations < maxIterations) {
+                changed = false;
+                iterations++;
+                
+                // Приписываем точки к ближайшим центроидам
+                dataPoints.forEach(point => {
+                    let minDist = Infinity;
+                    let closestCentroid = 0;
+                    
+                    centroids.forEach((centroid, idx) => {
+                        const dist = Math.pow(point.x - centroid.x, 2) + Math.pow(point.y - centroid.y, 2);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestCentroid = idx;
+                        }
+                    });
+                    
+                    if (point.cluster !== closestCentroid) {
+                        point.cluster = closestCentroid;
+                        changed = true;
+                    }
+                });
+                
+                // Пересчитываем центроиды
+                const clusterSums = Array(k).fill().map(() => ({ x: 0, y: 0, count: 0 }));
+                
+                dataPoints.forEach(point => {
+                    const cluster = point.cluster;
+                    clusterSums[cluster].x += point.x;
+                    clusterSums[cluster].y += point.y;
+                    clusterSums[cluster].count++;
+                });
+                
+                centroids = clusterSums.map(sum => {
+                    return {
+                        x: sum.count > 0 ? sum.x / sum.count : 0,
+                        y: sum.count > 0 ? sum.y / sum.count : 0
+                    };
+                });
+            }
+            
+            // Сохраняем центроиды для отображения
+            window.currentCentroids = centroids;
+        }
+        
+        // Случайная кластеризация (для демонстрации других алгоритмов)
+        function randomClustering(k) {
+            dataPoints.forEach(point => {
+                point.cluster = Math.floor(Math.random() * k);
+            });
+        }
+        
+        // Обновление графика с данными
+        function updateChartWithData() {
+            // Отображаем точки без кластеризации (все одним цветом)
+            chart.data.datasets = [{
+                label: 'Точки данных',
+                data: dataPoints.map(p => ({ x: p.x, y: p.y })),
+                backgroundColor: '#cccccc',
+                borderColor: '#999999',
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }];
+            
+            chart.update();
+        }
+        
+        // Обновление графика с результатами кластеризации
+        function updateChartWithClusters() {
+            const k = parseInt(clusterSlider.value);
+            const datasets = [];
+            
+            // Создаем датасет для каждого кластера
+            for (let i = 0; i < k; i++) {
+                const clusterPoints = dataPoints.filter(p => p.cluster === i);
+                
+                datasets.push({
+                    label: `Кластер ${i + 1}`,
+                    data: clusterPoints.map(p => ({ x: p.x, y: p.y })),
+                    backgroundColor: clusterColors[i % clusterColors.length],
+                    borderColor: clusterColors[i % clusterColors.length],
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                });
+            }
+            
+            // Добавляем центроиды для K-means
+            if (currentAlgorithm === 'kmeans' && window.currentCentroids) {
+                datasets.push({
+                    label: 'Центроиды',
+                    data: window.currentCentroids.map(c => ({ x: c.x, y: c.y })),
+                    backgroundColor: '#000000',
+                    borderColor: '#000000',
+                    pointRadius: 10,
+                    pointHoverRadius: 12,
+                    pointStyle: 'crossRot'
+                });
+            }
+            
+            chart.data.datasets = datasets;
+            chart.update();
+        }
+        
+        // Расчет метрик качества кластеризации
+        function calculateMetrics() {
+            const k = parseInt(clusterSlider.value);
+            
+            // Рассчитываем силуэт (упрощенная версия)
+            let silhouetteSum = 0;
+            let validPoints = 0;
+            
+            for (let i = 0; i < dataPoints.length; i++) {
+                const point = dataPoints[i];
+                const cluster = point.cluster;
+                
+                // Среднее расстояние до точек в своем кластере
+                let intraDist = 0;
+                let intraCount = 0;
+                
+                // Среднее расстояние до точек в ближайшем соседнем кластере
+                let interDist = Infinity;
+                
+                // Считаем расстояния до всех других точек
+                for (let j = 0; j < dataPoints.length; j++) {
+                    if (i === j) continue;
+                    
+                    const otherPoint = dataPoints[j];
+                    const dist = Math.sqrt(
+                        Math.pow(point.x - otherPoint.x, 2) + 
+                        Math.pow(point.y - otherPoint.y, 2)
+                    );
+                    
+                    if (otherPoint.cluster === cluster) {
+                        intraDist += dist;
+                        intraCount++;
+                    }
+                }
+                
+                intraDist = intraCount > 0 ? intraDist / intraCount : 0;
+                
+                // Ищем ближайший соседний кластер
+                for (let c = 0; c < k; c++) {
+                    if (c === cluster) continue;
+                    
+                    let clusterDist = 0;
+                    let clusterCount = 0;
+                    
+                    for (let j = 0; j < dataPoints.length; j++) {
+                        if (i === j) continue;
+                        
+                        const otherPoint = dataPoints[j];
+                        if (otherPoint.cluster === c) {
+                            const dist = Math.sqrt(
+                                Math.pow(point.x - otherPoint.x, 2) + 
+                                Math.pow(point.y - otherPoint.y, 2)
+                            );
+                            clusterDist += dist;
+                            clusterCount++;
+                        }
+                    }
+                    
+                    const avgClusterDist = clusterCount > 0 ? clusterDist / clusterCount : 0;
+                    if (avgClusterDist < interDist) {
+                        interDist = avgClusterDist;
+                    }
+                }
+                
+                // Рассчитываем силуэт для точки
+                if (intraCount > 0 && interDist < Infinity) {
+                    const silhouette = (interDist - intraDist) / Math.max(intraDist, interDist);
+                    silhouetteSum += silhouette;
+                    validPoints++;
+                }
+            }
+            
+            const avgSilhouette = validPoints > 0 ? (silhouetteSum / validPoints).toFixed(3) : 0;
+            
+            // Отображаем метрики
+            metricsDisplay.innerHTML = `
+                <h3>Метрики качества кластеризации:</h3>
+                <ul class="algorithm-list">
+                    <li><strong>Коэффициент силуэта:</strong> ${avgSilhouette} (чем ближе к 1, тем лучше)</li>
+                    <li><strong>Число кластеров:</strong> ${k}</li>
+                    <li><strong>Число точек:</strong> ${dataPoints.length}</li>
+                    <li><strong>Алгоритм:</strong> ${algorithmDescriptions[currentAlgorithm].name}</li>
+                </ul>
+                <p style="margin-top: 10px;">Коэффициент силуэта принимает значения от -1 до 1. Значение близкое к 1 указывает на хорошее разделение кластеров.</p>
+            `;
+        }
+        
+        // Обновление легенды
+        function updateLegend() {
+            const k = parseInt(clusterSlider.value);
+            let legendHTML = '';
+            
+            for (let i = 0; i < k; i++) {
+                const color = clusterColors[i % clusterColors.length];
+                const count = dataPoints.filter(p => p.cluster === i).length;
+                
+                legendHTML += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: ${color};"></div>
+                        <span>Кластер ${i + 1}: ${count} точек</span>
+                    </div>
+                `;
+            }
+            
+            chartLegend.innerHTML = legendHTML;
+        }
+        
+        // Вспомогательная функция для перемешивания массива
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
